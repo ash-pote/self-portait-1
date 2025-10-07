@@ -1,80 +1,60 @@
-// Reference for hand track: https://docs.ml5js.org/#/reference/handpose
-// Reference for edge detection: https://editor.p5js.org/p5/sketches/Image:_EdgeDetection
+/*
+ * @name Edge Detection
+ * @arialabel Astronaut rendered in black and white on the left and a highly sharpened version of the image on the right
+ * @description A high-pass filter sharpens an image. This program analyzes every pixel in an image in relation to the neighboring pixels to sharpen the image.
+ * <br><br><span class="small"><em>This example is ported from the <a href="https://processing.org/examples/edgedetection.html">Edge Detection example</a>
+ * on the Processing website</em></span>
+ */
+// this program analyzes every pixel in an image
+// in relation to the neighbouring pixels
+// to sharpen the image
 
-// ✓ 1. Set the video capture ✓
-// ✓ 2. Connect ML5 ✓
-// ✓ 3. Draw lines with hand ✓
-// ✓ 4. Trace face ✓
-// 5. Trace face slowly
-// 6. Add gestural movements from hand
-// 7. Press button to stop
-
-let video;
-let handPose;
-let hands = [];
-let previousX = null;
-let previousY = null;
-
+// to consider all neighboring pixels we use a 3x3 array
+// and normalize these values
+// kernel is the 3x3 matrix of normalized values
 let kernel = [
   [-1, -1, -1],
   [-1, 11, -1],
   [-1, -1, -1],
 ];
 
+// preload() runs once, before setup()
+// loadImage() needs to occur here instead of setup()
+// if loadImage() is called in setup(), the image won't appear
+// since noLoop() restricts draw() to execute only once
+// (one execution of draw() is not enough time for the image to load),
+// preload() makes sure image is loaded before anything else occurs
 function preload() {
-  handPose = ml5.handPose();
+  // load the original image
   img = loadImage("./img-test-2.jpg");
 }
 
-// Callback function for when handPose outputs data
-function gotHands(results) {
-  // Save the output to the hands variable
-  hands = results;
-}
-
+// setup() runs after preload, once()
 function setup() {
-  createCanvas(640, 480);
-  background(150);
-
-  // Create the video and hide it
-  video = createCapture(VIDEO);
-  video.size(640, 480);
-  video.hide();
-
-  // Start detecting hands from the webcam video
-  handPose.detectStart(video, gotHands);
-
-  drawImage();
+  // create canvas
+  createCanvas(710, 400);
+  // noLoop() makes draw() run only once, not in a loop
+  noLoop();
 }
 
+// draw() runs after setup(), normally on a loop
+// in this case it runs only once, because of noDraw()
 function draw() {
-  // image(video, 0, 0, width, height);
-  // filter(INVERT);
-  // loadPixels();
-
-  // Draw all the tracked hand points
-  for (let i = 0; i < hands.length; i++) {
-    let hand = hands[i];
-    let keypoint = hand.keypoints[8];
-    fill(0, 255, 0);
-    strokeWeight(1);
-
-    if (previousX !== null && previousY !== null) {
-      line(previousX, previousY, keypoint.x, keypoint.y);
-    }
-
-    previousX = keypoint.x;
-    previousY = keypoint.y;
-  }
-}
-
-function drawImage() {
   // place the original image on the upper left corner
   image(img, 0, 0);
+
   // create a new image, same dimensions as img
   edgeImg = createImage(img.width, img.height);
+
   // load its pixels
   edgeImg.loadPixels();
+
+  // two for() loops, to iterate in x axis and y axis
+  // since the kernel assumes that the pixel
+  // has pixels above, under, left, and right
+  // we need to skip the first and last column and row
+  // x then goes from 1 to width - 1
+  // y then goes from 1 to height - 1
 
   for (let x = 1; x < img.width - 1; x++) {
     for (let y = 1; y < img.height - 1; y++) {
