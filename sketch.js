@@ -1,5 +1,6 @@
 // Reference for hand track: https://docs.ml5js.org/#/reference/handpose
 // Reference for edge detection: https://editor.p5js.org/p5/sketches/Image:_EdgeDetection
+// Reference for colour detection: https://editor.p5js.org/elizabethk/sketches/dAA8XOPUg
 
 // ✓ 1. Set the video capture ✓
 // ✓ 2. Connect ML5 ✓
@@ -21,6 +22,12 @@ let kernel = [
   [-1, -1, -1],
 ];
 
+let sum = 0;
+let edgeImg;
+let img;
+let finishedEdgeImg;
+let canvas;
+
 function preload() {
   handPose = ml5.handPose();
   img = loadImage("./img-test-2.jpg");
@@ -33,7 +40,7 @@ function gotHands(results) {
 }
 
 function setup() {
-  createCanvas(640, 480);
+  canvas = createCanvas(800, 480);
   background(150);
 
   // Create the video and hide it
@@ -43,8 +50,11 @@ function setup() {
 
   // Start detecting hands from the webcam video
   handPose.detectStart(video, gotHands);
-
+  // place the original image on the upper left corner
+  image(img, 0, 0);
   drawImage();
+  // draw edgeImg at the right of the original image
+  // image(edgeImg, img.width, 0);
 }
 
 function draw() {
@@ -52,25 +62,10 @@ function draw() {
   // filter(INVERT);
   // loadPixels();
 
-  // Draw all the tracked hand points
-  for (let i = 0; i < hands.length; i++) {
-    let hand = hands[i];
-    let keypoint = hand.keypoints[8];
-    fill(0, 255, 0);
-    strokeWeight(1);
-
-    if (previousX !== null && previousY !== null) {
-      line(previousX, previousY, keypoint.x, keypoint.y);
-    }
-
-    previousX = keypoint.x;
-    previousY = keypoint.y;
-  }
+  drawLines();
 }
 
 function drawImage() {
-  // place the original image on the upper left corner
-  image(img, 0, 0);
   // create a new image, same dimensions as img
   edgeImg = createImage(img.width, img.height);
   // load its pixels
@@ -79,7 +74,7 @@ function drawImage() {
   for (let x = 1; x < img.width - 1; x++) {
     for (let y = 1; y < img.height - 1; y++) {
       // kernel sum for the current pixel starts as 0
-      let sum = 0;
+      sum = 0;
 
       // kx, ky variables for iterating over the kernel
       // kx, ky have three different values: -1, 0, 1
@@ -104,7 +99,7 @@ function drawImage() {
 
       // set the pixel value of the edgeImg
       if (sum < 100) {
-        edgeImg.set(x, y, color(0)); // dark edge
+        edgeImg.set(x, y, color(200)); // dark edge
       } else {
         edgeImg.set(x, y, color(255)); // bright background
       }
@@ -113,7 +108,57 @@ function drawImage() {
 
   // updatePixels() to write the changes on edgeImg
   edgeImg.updatePixels();
+  // image(edgeImg, img.width, 0);
+}
 
-  // draw edgeImg at the right of the original image
-  image(edgeImg, img.width, 0);
+function drawLines() {
+  // Get the color at the mouse position
+
+  for (let i = 0; i < hands.length; i++) {
+    let hand = hands[i];
+    let keypoint = hand.keypoints[8];
+    let c = img.get(keypoint.x, keypoint.y);
+    console.log(c);
+
+    fill("green");
+    circle(keypoint.x, keypoint.y, 5);
+
+    if (c[0] <= 100) {
+      fill(c);
+      circle(keypoint.x + img.width, keypoint.y, 5);
+    } else {
+      fill(255);
+      noStroke();
+      circle(keypoint.x + img.width, keypoint.y, 5);
+    }
+
+    // if (previousX !== null && previousY !== null) {
+    //   if (c[0] <= 50) {
+    //     fill(c);
+    //     circle(keypoint.x + img.width, keypoint.y, 5);
+    //     // line(
+    //     //   previousX + img.width,
+    //     //   previousY,
+    //     //   keypoint.x + img.width,
+    //     //   keypoint.y
+    //     // );
+    //   }
+    // }
+
+    // previousX = keypoint.x;
+    // previousY = keypoint.y;
+
+    // if (c[0] <= 100) {
+    //   fill("green");
+    //   circle(keypoint.x + 200, keypoint.y, 20);
+    // } else {
+    //   fill("purple");
+    //   circle(keypoint.x + 200, keypoint.y, 20);
+    // }
+  }
+
+  // fill(c);
+  // square(mouseX, mouseY, 20);
+
+  // loadPixels();
 }
